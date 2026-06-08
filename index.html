@@ -170,14 +170,28 @@
             border-radius: 60px;
             padding: 6px;
         }
+        /* НОВЫЙ СТИЛЬ ВКЛАДОК – более прямоугольные, без эмодзи, крупный текст */
         .tab {
             flex: 1;
             text-align: center;
             padding: 12px 0;
-            border-radius: 50px;
-            font-weight: 600;
+            border-radius: 30px;       /* было 50px – уменьшил, чтобы было более квадратно */
+            font-weight: 700;
+            font-size: 1rem;           /* чёткий размер */
             cursor: pointer;
             transition: 0.1s;
+            background: #2a2a2a;
+            color: #ccc;
+            letter-spacing: 0.3px;
+        }
+        body.light .tab {
+            background: #e0d6c0;
+            color: #3a3a2a;
+        }
+        .tab.active {
+            background: #e6c87a;
+            color: #0a0a0a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
         .section {
             display: none;
@@ -458,10 +472,10 @@
 <body class="dark">
 <div class="container">
     <div class="tab-bar">
-        <div class="tab active" data-section="scenes">🎬 Сцены</div>
-        <div class="tab" data-section="schedule">📅 Расписание</div>
-        <div class="tab" data-section="expenses">💰 Расходы</div>
-        <div class="tab" data-section="settings">⚙️ База</div>
+        <div class="tab active" data-section="scenes">Сцены</div>
+        <div class="tab" data-section="schedule">Расписание</div>
+        <div class="tab" data-section="expenses">Расходы</div>
+        <div class="tab" data-section="settings">База</div>
     </div>
 
     <div id="scenesSection" class="section active"><div id="scenesList"></div></div>
@@ -482,16 +496,16 @@
         <div id="totalExpenses" style="margin-top: 16px;"></div>
     </div>
     <div id="settingsSection" class="section">
-        <div class="card"><h3>🎭 Актёры</h3><div id="actorsContainer" class="actors-container"></div><button id="addActorBtn">➕ Актёр</button></div>
-        <div class="card"><h3>📍 Локации</h3><div id="locationsList"></div><button id="addLocationBtn">➕ Локация</button></div>
+        <div class="card"><h3>Актёры</h3><div id="actorsContainer" class="actors-container"></div><button id="addActorBtn">➕ Актёр</button></div>
+        <div class="card"><h3>Локации</h3><div id="locationsList"></div><button id="addLocationBtn">➕ Локация</button></div>
         <div class="card"><button id="exportReportBtn">📄 Экспорт отчёта (TXT)</button><button id="exportJSONBtn">📁 Экспорт JSON</button><button id="clearAllBtn" style="background:#6a2a1a;">⚠️ Сбросить всё</button></div>
-        <div class="card"><h3>🎨 Тема</h3><div id="themeButtons" class="theme-buttons"><button id="darkThemeBtn">🌙 Тёмная</button><button id="lightThemeBtn">☀️ Светлая</button></div></div>
+        <div class="card"><h3>Тема</h3><div id="themeButtons" class="theme-buttons"><button id="darkThemeBtn">🌙 Тёмная</button><button id="lightThemeBtn">☀️ Светлая</button></div></div>
     </div>
     <div class="fab" id="fabAddScene">+</div>
 </div>
 
 <script>
-    // ---------- Модель данных ----------
+    // ---------- Модель данных (такая же, как в последней рабочей версии) ----------
     let scenes = [], expenses = [], actors = [], locations = [], schedule = [];
     let currentTheme = 'dark', currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
     let currentSelectedDate = null;
@@ -523,7 +537,6 @@
         if (!expenses.length) expenses.push({ id: Date.now(), name: 'Камера', amount: 5000, date: new Date().toISOString().slice(0,10) });
         if (!actors.length) actors.push({ id: 1, name: 'Иван', gender: 'мужской' }, { id: 2, name: 'Мария', gender: 'женский' });
         if (!locations.length) locations = ['Набережная', 'Студия'];
-        // Добавляем поля времени и сцены в расписание, если их нет (миграция старых данных)
         if (schedule.length && schedule[0].startTime === undefined) {
             schedule = schedule.map(ev => ({ ...ev, startTime: '09:00', endTime: '18:00', sceneId: scenes[0]?.id }));
         }
@@ -552,7 +565,6 @@
     function findScene(id) { return scenes.find(s => s.id === id); }
     function findShot(sceneId, shotId) { let s = findScene(sceneId); return s ? s.shots.find(sh => sh.id === shotId) : null; }
 
-    // ---------- Универсальная функция показа модального окна (Promise) ----------
     function showModal(htmlContent, onSubmit, onCancel = null) {
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
@@ -590,7 +602,6 @@
         });
     }
 
-    // ----- Текстовый ввод -----
     function promptText(title, defaultValue = '', placeholder = '') {
         const html = `
             <h3>${escapeHtml(title)}</h3>
@@ -603,7 +614,6 @@
         return showModal(html, (container) => container.querySelector('#modalInput').value);
     }
 
-    // ----- Числовой ввод -----
     function promptNumber(title, defaultValue = 0) {
         const html = `
             <h3>${escapeHtml(title)}</h3>
@@ -616,7 +626,6 @@
         return showModal(html, (container) => parseFloat(container.querySelector('#modalInput').value));
     }
 
-    // ----- Ввод времени с автоформатом (вводишь цифры, получаешь ЧЧ:ММ) -----
     function promptTime(title, defaultValue = '09:00') {
         const html = `
             <h3>${escapeHtml(title)}</h3>
@@ -628,7 +637,6 @@
         `;
         return showModal(html, (container) => {
             let val = container.querySelector('#modalInput').value.trim();
-            // Удаляем всё, кроме цифр
             let digits = val.replace(/\D/g, '');
             if (digits.length === 0) return '00:00';
             if (digits.length === 1) digits = '0' + digits + '00';
@@ -640,7 +648,6 @@
         });
     }
 
-    // ----- Выбор сцены (выпадающий список) -----
     async function selectSceneForSchedule(currentSceneId) {
         const options = scenes.map(s => `<option value="${s.id}" ${s.id === currentSceneId ? 'selected' : ''}>Сцена ${s.number} — ${s.title || '(без названия)'}</option>`);
         const html = `<h3>Выберите сцену</h3><select id="sceneSelect">${options.join('')}</select><div class="modal-buttons"><button id="modalCancel">Отмена</button><button id="modalOk">OK</button></div>`;
@@ -648,7 +655,6 @@
         return result;
     }
 
-    // ----- Выбор типа кадра (без изменений) -----
     async function selectShotType() {
         const html = `
             <h3>Выберите тип кадра</h3>
@@ -694,7 +700,6 @@
         });
     }
 
-    // ----- Выбор актёров (оставляем как есть) -----
     async function selectActors(currentSelectedIds) {
         let selectedIds = [...currentSelectedIds];
         let currentTab = 'male';
@@ -713,7 +718,6 @@
                     <input type="checkbox" value="${a.id}" ${selectedIds.includes(a.id) ? 'checked' : ''}>
                 </div>
             `).join('');
-            // привязываем обработчики к новым чекбоксам
             listContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.addEventListener('change', (e) => {
                     const id = parseInt(cb.value);
@@ -780,7 +784,6 @@
         });
     }
 
-    // ----- Выбор локации -----
     async function selectLocation(currentLoc) {
         const html = `<h3>Выберите локацию</h3>
             ${locations.map(loc => `<div class="modal-check-item"><label>${escapeHtml(loc)}</label><input type="radio" name="loc" value="${escapeHtml(loc)}" ${loc === currentLoc ? 'checked' : ''}></div>`).join('')}
@@ -792,7 +795,6 @@
         return result;
     }
 
-    // ----- Расписание (с временем и сценой) -----
     function computeHours(start, end) {
         let s = start.split(':').map(Number), e = end.split(':').map(Number);
         let minutes = (e[0]*60+e[1]) - (s[0]*60+s[1]);
@@ -848,7 +850,6 @@
         html += '</div>';
         document.getElementById('calendarContainer').innerHTML = html;
         document.querySelectorAll('.cal-day').forEach(day => day.onclick = () => showEvents(day.dataset.date));
-        // Подсчёт общей суммы часов
         let total = schedule.reduce((sum, ev) => sum + computeHours(ev.startTime, ev.endTime), 0);
         document.getElementById('totalHoursStat').innerHTML = `⏱️ Всего отработано: ${total.toFixed(1)} часов`;
     }
@@ -889,7 +890,7 @@
         showEvents(`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`);
     }
 
-    // ---------- Сцены (без изменений) ----------
+    // ---------- Сцены ----------
     function renderScenes() {
         let html = '';
         scenes.forEach(s => {
@@ -1045,7 +1046,7 @@
         }
     }
 
-    // ---------- Актёры (отдельные колонки в базе) ----------
+    // ---------- Актёры (отдельные колонки) ----------
     function renderActors() {
         const males = actors.filter(a => a.gender === 'мужской');
         const females = actors.filter(a => a.gender === 'женский');
