@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Кино-менеджер (исправленный)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            padding: 20px 16px 90px;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.dark {
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        body.light {
+            background: #f5efe0;
+            color: #1e1e1e;
+        }
+        .card {
+            padding: 18px;
+            margin-bottom: 20px;
+            border-radius: 20px;
+        }
+        body.dark .card {
+            background: #1e1e2a;
+            border-left: 5px solid #e6c87a;
+            color: #f0f0f0;
+        }
+        body.light .card {
+            background: #fefaf0;
+            border-left: 5px solid #e6c87a;
+            color: #1e1e1e;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.1s;
+            letter-spacing: 0.3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        body.dark .tab {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border: 1px solid #4a4a5a;
+        }
+        body.light .tab {
+            background: #e0d6c0;
+            color: #2c2c2c;
+            border: 1px solid #b0a07a;
+        }
+        .tab.active {
+            background: #e6c87a !important;
+            color: #0a0a0a !important;
+            border-color: #e6c87a !important;
+            box-shadow: 0 2px 8px rgba(230,200,122,0.4);
+        }
+        .section { display: none; }
+        .section.active { display: block; }
+        button, .btn {
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 4px 6px 4px 0;
+            font-size: 1rem;
+            transition: 0.05s linear;
+        }
+        button:active { transform: scale(0.96); }
+        body.dark button, body.dark .btn { background: #3a3a44; color: white; }
+        body.light button, body.light .btn { background: #d6c8a8; color: #1e1e1e; }
+        button.primary { background: #e6c87a !important; color: #0a0a0a !important; font-weight: bold; }
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #e6c87a;
+            color: black;
+            width: 56px;
+            height: 56px;
+            border-radius: 56px;
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: none;
+            z-index: 200;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal-container {
+            border-radius: 32px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        body.dark .modal-container {
+            background: #1a1a1a;
+            color: #f0f0f0;
+            border: 1px solid #e6c87a;
+        }
+        body.light .modal-container {
+            background: #f0e8da;
+            color: #1e1e1e;
+            border: 1px solid #e6c87a;
+        }
+        .modal-container input, .modal-container textarea, .modal-container select {
+            width: 100%;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 40px;
+            border: 1px solid #e6c87a;
+            background: rgba(0,0,0,0.2);
+            color: inherit;
+            font-size: 1rem;
+        }
+        .modal-group { margin: 16px 0; }
+        .modal-group h4 { margin-bottom: 8px; font-size: 1.1rem; }
+        .modal-check-item {
+            display: flex; align-items: center; gap: 12px;
+            margin: 10px 0; padding: 8px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 40px; cursor: pointer;
+        }
+        .modal-check-item label { flex: 1; font-size: 1rem; cursor: pointer; }
+        .modal-check-item input { width: 24px; height: 24px; margin: 0; transform: scale(1.2); cursor: pointer; }
+        .modal-buttons {
+            display: flex; justify-content: space-between; gap: 12px;
+            margin-top: 24px;
+        }
+        .modal-buttons button { flex: 1; padding: 12px; font-size: 1rem; font-weight: bold; }
+        .search-input {
+            margin-bottom: 12px; padding: 10px; border-radius: 40px;
+            border: 1px solid #e6c87a; background: rgba(0,0,0,0.2);
+            color: inherit; width: 100%; font-size: 1rem;
+        }
+        .tab-switch {
+            display: flex; gap: 12px; margin-bottom: 16px;
+        }
+        .tab-switch button { flex: 1; margin: 0; }
+        .tab-switch button.active {
+            background: #e6c87a; color: black;
+        }
+        .scene-header {
+            display: flex; justify-content: space-between; align-items: baseline;
+            flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+        }
+        .scene-num {
+            padding: 4px 14px; border-radius: 40px; font-weight: bold;
+        }
+        body.dark .scene-num { background: #3a3a44; color: #e6c87a; }
+        body.light .scene-num { background: #e0d6c0; color: #2c2c2c; }
+        .scene-loc { font-weight: 500; }
+        .checklist-item {
+            display: flex; align-items: center; gap: 12px;
+            margin: 8px 0; padding: 8px 14px;
+            border-radius: 30px; cursor: pointer;
+            background: rgba(0,0,0,0.2);
+        }
+        .shot-item {
+            background: rgba(0,0,0,0.15);
+            border-radius: 24px; padding: 12px; margin: 12px 0;
+        }
+        .shot-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .takes { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        .take {
+            border-radius: 40px; padding: 4px 14px;
+            display: inline-flex; align-items: center; gap: 10px;
+            cursor: pointer;
+        }
+        body.dark .take { background: #3a3a44; }
+        body.light .take { background: #e0d6c0; }
+        .status {
+            width: 24px; height: 24px; background: #555;
+            border-radius: 24px; cursor: pointer; border: 2px solid #e6c87a;
+        }
+        .status.done { background: #4caf50; box-shadow: 0 0 6px #4caf50; }
+        .calendar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 16px; font-weight: bold;
+        }
+        .calendar {
+            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+            margin-bottom: 20px;
+        }
+        .cal-day {
+            text-align: center; padding: 10px; border-radius: 30px;
+            cursor: pointer;
+        }
+        body.dark .cal-day { background: #2a2a34; color: #ddd; }
+        body.light .cal-day { background: #e8dfcf; color: #1e1e1e; }
+        .cal-day.has-event {
+            background: #e6c87a; color: #0a0a0a; font-weight: bold;
+        }
+        .cal-day.selected {
+            box-shadow: 0 0 0 3px #e6c87a;
+            font-weight: bold;
+        }
+        .expense-row {
+            border-radius: 30px; padding: 10px 16px; margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        body.dark .expense-row { background: #2a2a34; color: #f0f0f0; }
+        body.light .expense-row { background: #e8dfcf; color: #1e1e1e; }
+        .tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 4px 14px; border-radius: 40px; margin: 4px;
+        }
+        body.dark .tag { background: #2a2a34; color: #f0f0f0; }
+        body.light .tag { background: #e0d6c0; color: #1e1e1e; }
+        .month-nav { background: none; font-size: 1.4rem; padding: 4px 12px; margin: 0; }
+        .actors-container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; }
+        .actors-column { flex: 1; min-width: 140px; }
+        .actors-column h4 { margin-bottom: 8px; font-size: 1rem; }
+        .theme-buttons { display: flex; gap: 12px; }
+        .theme-buttons button { flex: 1; }
+        .theme-buttons button.active {
+            background: #e6c87a; color: #0a0a0a; box-shadow: 0 0 0 1px #0a0a0a;
+        }
+    </style>
+</head>
+<body class="dark">
+<div class="container">
+    <div class="tab-bar">
+        <div class="tab active" data-section="scenes">Сцены</div>
+        <div class="tab" data-section="schedule">Расписание</div>
+        <div class="tab" data-section="expenses">Расходы</div>
+        <div class="tab" data-section="settings">База</div>
+    </div>
+
+    <div id="scenesSection" class="section active"><div id="scenesList"></div></div>
+    <div id="scheduleSection" class="section">
+        <div class="calendar-header">
+            <button class="month-nav" id="prevMonthBtn">◀</button>
+            <span id="currentMonthYear"></span>
+            <button class="month-nav" id="nextMonthBtn">▶</button>
+        </div>
+        <div id="calendarContainer" class="calendar"></div>
+        <div id="scheduleEvents"></div>
+        <button id="addScheduleEventBtn" class="primary">➕ Съёмочный день</button>
+        <div id="totalHoursStat" style="margin-top: 16px; font-weight: bold;"></div>
+    </div>
+    <div id="expensesSection" class="section">
+        <button id="addExpenseBtn">➕ Расход</button>
+        <div id="expensesList"></div>
+        <div id="totalExpenses" style="margin-top: 16px;"></div>
+    </div>
+    <div id="settingsSection" class="section">
+        <div class="card"><h3>Актёры</h3><div id="actorsContainer" class="actors-container"></div><button id="addActorBtn">➕ Актёр</button></div>
+        <div class="card"><h3>Локации</h3><div id="locationsList"></div><button id="addLocationBtn">➕ Локация</button></div>
+        <div class="card">
+            <button id="exportReportBtn">📄 Экспорт отчёта (TXT)</button>
+            <button id="exportJSONBtn">📁 Экспорт JSON</button>
+            <button id="importJSONBtn">📂 Импорт из JSON</button>
+            <button id="clearAllBtn" style="background:#6a2a1a; color:white;">⚠️ Сбросить всё</button>
+        </div>
+        <div class="card"><h3>Тема</h3><div id="themeButtons" class="theme-buttons"><button id="darkThemeBtn">🌙 Тёмная</button><button id="lightThemeBtn">☀️ Светлая</button></div></div>
+    </div>
+    <div class="fab" id="fabAddScene">+</div>
+</div>
+
+<script>
+(function() {
+    // ---------- Вспомогательные функции безопасности ----------
+    const escapeHtml = (str) => {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    };
+    const escapeAttr = (str) => {
+        if (!str) return '';
+        return str.replace(/[&<>"]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : m === '>' ? '&gt;' : '&quot;');
+    };
+
+    // ---------- Модель данных ----------
+    let scenes = [], expenses = [], actors = [], locations = [], schedule = [];
+    let currentTheme = 'dark', currentYear = new Date().getFullYear(), currentMonth = new Date().getMonth();
+    let currentSelectedDate = null; // формат YYYY-MM-DD
+
+    const defaultShotTypes = ['Общий план', 'Средний план', 'Крупный план', 'Деталь', 'Панорама', 'Наезд', 'Отъезд', 'План-деталь', 'Рукопожатие', 'Диалог'];
+
+    // ---------- Сохранение / загрузка ----------
+    function saveAll() {
+        localStorage.setItem('scenes', JSON.stringify(scenes));
+        localStorage.setItem('expenses', JSON.stringify(expenses));
+        localStorage.setItem('actors', JSON.stringify(actors));
+        localStorage.setItem('locations', JSON.stringify(locations));
+        localStorage.setItem('schedule', JSON.stringify(schedule));
+        localStorage.setItem('theme', currentTheme);
+    }
+
+    function loadData() {
+        try {
+            scenes = JSON.parse(localStorage.getItem('scenes') || '[]');
+            expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+            actors = JSON.parse(localStorage.getItem('actors') || '[]');
+            locations = JSON.parse(localStorage.getItem('locations') || '[]');
+            schedule = JSON.parse(localStorage.getItem('schedule') || '[]');
+        } catch (e) {
+            // если данные повреждены, начинаем с чистого листа
+            scenes = []; expenses = []; actors = []; locations = []; schedule = [];
+        }
+
+        // Миграция старых данных: если актёры были просто строками, превращаем в объекты
+        if (actors.length && typeof actors[0] === 'string') {
+            actors = actors.map((name, idx) => ({ id: idx+1, name, gender: 'мужской' }));
+        }
+
+        // Заполняем значения по умолчанию, если пусто
+        if (!scenes.length) scenes.push({ id: Date.now(), number: 1, title: '', description: '', location: '', actors: [], checklist: [], shots: [] });
+        if (!expenses.length) expenses.push({ id: Date.now(), name: 'Камера', amount: 5000, date: new Date().toISOString().slice(0,10) });
+        if (!actors.length) actors.push({ id: 1, name: 'Иван', gender: 'мужской' }, { id: 2, name: 'Мария', gender: 'женский' });
+        if (!locations.length) locations = ['Набережная', 'Студия'];
+        // Миграция расписания: старые записи без startTime
+        if (schedule.length && schedule[0].startTime === undefined) {
+            schedule = schedule.map(ev => ({ ...ev, startTime: '09:00', endTime: '18:00', sceneId: scenes[0]?.id }));
+        }
+        if (!schedule.length) schedule.push({ id: Date.now(), date: new Date().toISOString().slice(0,10), startTime: '09:00', endTime: '18:00', sceneId: scenes[0].id, notes: 'Первый день' });
+
+        // Установим currentSelectedDate на ближайшее событие или сегодня
+        if (schedule.length) {
+            const dates = schedule.map(ev => ev.date).sort();
+            currentSelectedDate = dates[0];
+        } else {
+            currentSelectedDate = new Date().toISOString().slice(0,10);
+        }
+
+        saveAll();
+    }
+
+    // ---------- Тема ----------
+    function setTheme(theme) {
+        currentTheme = theme;
+        document.body.className = theme;
+        const darkBtn = document.getElementById('darkThemeBtn');
+        const lightBtn = document.getElementById('lightThemeBtn');
+        if (darkBtn && lightBtn) {
+            darkBtn.classList.toggle('active', theme === 'dark');
+            lightBtn.classList.toggle('active', theme === 'light');
+        }
+        saveAll();
+    }
+
+    // ---------- Поиск сущностей ----------
+    const findScene = (id) => scenes.find(s => s.id === id);
+    const findShot = (sceneId, shotId) => {
+        const scene = findScene(sceneId);
+        return scene ? scene.shots.find(sh => sh.id === shotId) : null;
+    };
+
+    // ---------- Модальные окна ----------
+    function showModal(htmlContent, onSubmit, onCancel = null) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+            container.innerHTML = htmlContent;
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            const close = (result) => {
+                overlay.remove();
+                resolve(result);
+            };
+
+            const okBtn = container.querySelector('#modalOk');
+            const cancelBtn = container.querySelector('#modalCancel');
+            if (okBtn) {
+                okBtn.onclick = (e) => {
+                    e.preventDefault();
+                    const result = onSubmit ? onSubmit(container) : true;
+                    if (result !== false) close(result);
+                };
+            }
+            if (cancelBtn) {
+                cancelBtn.onclick = (e) => {
+                    e.preventDefault();
+                    if (onCancel) onCancel();
+                    close(null);
+                };
+            }
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) close(null);
+            });
+        });
+    }
+
+    async function promptText(title, defaultValue = '', placeholder = '') {
+        const html = `
+            <h3>${escapeHtml(title)}</h3>
+            <input type="text" id="modalInput" value="${escapeAttr(defaultValue)}" placeholder="${escapeAttr(placeholder)}" autofocus>
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">OK</button>
+            </div>
+        `;
+        return await showModal(html, (container) => container.querySelector('#modalInput').value);
+    }
+
+    async function promptNumber(title, defaultValue = 0) {
+        const html = `
+            <h3>${escapeHtml(title)}</h3>
+            <input type="number" id="modalInput" value="${defaultValue}">
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">OK</button>
+            </div>
+        `;
+        return await showModal(html, (container) => parseFloat(container.querySelector('#modalInput').value));
+    }
+
+    async function promptTime(title, defaultValue = '09:00') {
+        const html = `
+            <h3>${escapeHtml(title)}</h3>
+            <input type="text" id="modalInput" value="${escapeAttr(defaultValue)}" placeholder="ЧЧ:ММ" autofocus>
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">OK</button>
+            </div>
+        `;
+        return await showModal(html, (container) => {
+            let val = container.querySelector('#modalInput').value.trim();
+            let digits = val.replace(/\D/g, '');
+            if (digits.length === 0) return '00:00';
+            if (digits.length === 1) digits = '0' + digits + '00';
+            else if (digits.length === 2) digits = digits + '00';
+            else if (digits.length === 3) digits = '0' + digits;
+            let hours = Math.min(23, parseInt(digits.slice(0,2)) || 0).toString().padStart(2,'0');
+            let minutes = Math.min(59, parseInt(digits.slice(2,4)) || 0).toString().padStart(2,'0');
+            return `${hours}:${minutes}`;
+        });
+    }
+
+    async function selectSceneForSchedule(currentSceneId) {
+        const options = scenes.map(s => `<option value="${s.id}" ${s.id === currentSceneId ? 'selected' : ''}>Сцена ${s.number} — ${escapeHtml(s.title || '(без названия)')}</option>`);
+        const html = `<h3>Выберите сцену</h3><select id="sceneSelect">${options.join('')}</select><div class="modal-buttons"><button id="modalCancel">Отмена</button><button id="modalOk">OK</button></div>`;
+        const result = await showModal(html, (container) => parseInt(container.querySelector('#sceneSelect').value));
+        return result;
+    }
+
+    async function selectShotType() {
+        const html = `
+            <h3>Выберите тип кадра</h3>
+            <select id="shotSelect">
+                ${defaultShotTypes.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')}
+                <option value="__other__">Другой (ввести вручную)</option>
+            </select>
+            <div id="customDiv" style="display:none; margin-top:12px;">
+                <input type="text" id="customInput" placeholder="Введите тип кадра">
+            </div>
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">OK</button>
+            </div>
+        `;
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+            container.innerHTML = html;
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            const select = container.querySelector('#shotSelect');
+            const customDiv = container.querySelector('#customDiv');
+            select.addEventListener('change', () => {
+                customDiv.style.display = select.value === '__other__' ? 'block' : 'none';
+            });
+
+            const close = (result) => { overlay.remove(); resolve(result); };
+            container.querySelector('#modalOk').onclick = () => {
+                if (select.value === '__other__') {
+                    const customVal = container.querySelector('#customInput').value.trim();
+                    if (customVal) close(customVal);
+                    else alert('Введите тип кадра');
+                } else {
+                    close(select.value);
+                }
+            };
+            container.querySelector('#modalCancel').onclick = () => close(null);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+        });
+    }
+
+    async function selectActors(currentSelectedIds) {
+        let selectedIds = [...currentSelectedIds];
+        let currentTab = 'male';
+        const males = actors.filter(a => a.gender === 'мужской');
+        const females = actors.filter(a => a.gender === 'женский');
+
+        const renderList = (searchTerm = '') => {
+            const listContainer = document.getElementById('actorsListContainer');
+            if (!listContainer) return;
+            const items = currentTab === 'male' ? males : females;
+            const filtered = items.filter(a => a.name.toLowerCase().includes(searchTerm));
+            listContainer.innerHTML = filtered.map(a => `
+                <div class="modal-check-item">
+                    <label>${escapeHtml(a.name)}</label>
+                    <input type="checkbox" value="${a.id}" ${selectedIds.includes(a.id) ? 'checked' : ''}>
+                </div>
+            `).join('');
+            listContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const id = parseInt(cb.value);
+                    if (cb.checked) {
+                        if (!selectedIds.includes(id)) selectedIds.push(id);
+                    } else {
+                        selectedIds = selectedIds.filter(i => i !== id);
+                    }
+                });
+            });
+        };
+
+        const html = `
+            <h3>Выберите актёров</h3>
+            <div class="tab-switch" id="actorTabs">
+                <button id="tabMale" class="active">Мужчины</button>
+                <button id="tabFemale">Женщины</button>
+            </div>
+            <input type="text" id="actorSearch" class="search-input" placeholder="Поиск по имени...">
+            <div id="actorsListContainer" class="modal-group"></div>
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">OK</button>
+            </div>
+        `;
+
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+            container.innerHTML = html;
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            const tabMale = container.querySelector('#tabMale');
+            const tabFemale = container.querySelector('#tabFemale');
+            const searchInput = container.querySelector('#actorSearch');
+
+            const update = () => {
+                const searchTerm = searchInput.value.toLowerCase();
+                renderList(searchTerm);
+            };
+
+            tabMale.onclick = () => {
+                tabMale.classList.add('active');
+                tabFemale.classList.remove('active');
+                currentTab = 'male';
+                update();
+            };
+            tabFemale.onclick = () => {
+                tabFemale.classList.add('active');
+                tabMale.classList.remove('active');
+                currentTab = 'female';
+                update();
+            };
+            searchInput.addEventListener('input', update);
+            update();
+
+            const close = (result) => { overlay.remove(); resolve(result); };
+            container.querySelector('#modalOk').onclick = () => close(selectedIds);
+            container.querySelector('#modalCancel').onclick = () => close(null);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+        });
+    }
+
+    async function selectLocation(currentLoc) {
+        if (locations.length === 0) {
+            const newLoc = await promptText('Локаций нет. Введите новую:', '');
+            if (newLoc && !locations.includes(newLoc)) {
+                locations.push(newLoc);
+                saveAll();
+                renderLocations(); // обновим список в настройках
+                return newLoc;
+            }
+            return null;
+        }
+        const html = `<h3>Выберите локацию</h3>
+            ${locations.map(loc => `<div class="modal-check-item"><label>${escapeHtml(loc)}</label><input type="radio" name="loc" value="${escapeAttr(loc)}" ${loc === currentLoc ? 'checked' : ''}></div>`).join('')}
+            <div class="modal-buttons"><button id="modalCancel">Отмена</button><button id="modalOk">OK</button></div>`;
+        const result = await showModal(html, (container) => {
+            const selected = container.querySelector('input[name="loc"]:checked');
+            return selected ? selected.value : null;
+        });
+        return result;
+    }
+
+    function computeHours(start, end) {
+        try {
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 0;
+            let minutes = (eh*60+em) - (sh*60+sm);
+            if (minutes < 0) minutes += 1440;
+            return minutes / 60;
+        } catch (e) { return 0; }
+    }
+
+    // ---------- Полное редактирование сцены (одно окно) ----------
+    async function editSceneFull(sceneId) {
+        const scene = findScene(sceneId);
+        if (!scene) return;
+
+        const html = `
+            <h3>Редактирование сцены ${scene.number}</h3>
+            <label>Номер</label>
+            <input type="number" id="sceneNumber" value="${scene.number}" min="1">
+            <label>Название</label>
+            <input type="text" id="sceneTitle" value="${escapeAttr(scene.title)}">
+            <label>Описание</label>
+            <textarea id="sceneDesc" rows="2">${escapeHtml(scene.description)}</textarea>
+            <label>Локация</label>
+            <select id="sceneLocation">
+                ${locations.map(loc => `<option value="${escapeAttr(loc)}" ${loc === scene.location ? 'selected' : ''}>${escapeHtml(loc)}</option>`).join('')}
+                ${locations.length === 0 ? '<option disabled>Нет локаций</option>' : ''}
+            </select>
+            <button id="addLocationFromEdit" type="button">➕ Новая локация</button>
+            <label>Актёры</label>
+            <div id="sceneActorsList" style="margin:8px 0;">
+                ${(scene.actors || []).map(aId => {
+                    const actor = actors.find(a => a.id === aId);
+                    return actor ? `<span class="tag" data-actor-id="${aId}">${escapeHtml(actor.name)} <button type="button" class="removeActorTag">❌</button></span>` : '';
+                }).join('')}
+            </div>
+            <button id="selectActorsBtn" type="button">🎭 Выбрать актёров</button>
+            <div class="modal-buttons">
+                <button id="modalCancel">Отмена</button>
+                <button id="modalOk">Сохранить</button>
+            </div>
+        `;
+
+        let currentActorIds = [...(scene.actors || [])];
+
+        const result = await new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            const container = document.createElement('div');
+            container.className = 'modal-container';
+            container.innerHTML = html;
+            overlay.appendChild(container);
+            document.body.appendChild(overlay);
+
+            const updateActorTags = () => {
+                const listDiv = container.querySelector('#sceneActorsList');
+                listDiv.innerHTML = currentActorIds.map(aId => {
+                    const actor = actors.find(a => a.id === aId);
+                    return actor ? `<span class="tag" data-actor-id="${aId}">${escapeHtml(actor.name)} <button type="button" class="removeActorTag">❌</button></span>` : '';
+                }).join('');
+                listDiv.querySelectorAll('.removeActorTag').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const id = parseInt(btn.closest('.tag').dataset.actorId);
+                        currentActorIds = currentActorIds.filter(a => a !== id);
+                        updateActorTags();
+                    };
+                });
+            };
+
+            container.querySelector('#selectActorsBtn').onclick = async () => {
+                const newIds = await selectActors(currentActorIds);
+                if (newIds !== null) {
+                    currentActorIds = newIds;
+                    updateActorTags();
+                }
+            };
+
+            container.querySelector('#addLocationFromEdit').onclick = async () => {
+                const newLoc = await promptText('Новая локация:', '');
+                if (newLoc && !locations.includes(newLoc)) {
+                    locations.push(newLoc);
+                    saveAll();
+                    const select = container.querySelector('#sceneLocation');
+                    const option = document.createElement('option');
+                    option.value = newLoc;
+                    option.textContent = newLoc;
+                    option.selected = true;
+                    select.appendChild(option);
+                    renderLocations(); // обновим блок в настройках
+                }
+            };
+
+            const close = (res) => { overlay.remove(); resolve(res); };
+            container.querySelector('#modalOk').onclick = () => {
+                const number = parseInt(container.querySelector('#sceneNumber').value) || scene.number;
+                const title = container.querySelector('#sceneTitle').value;
+                const desc = container.querySelector('#sceneDesc').value;
+                const loc = container.querySelector('#sceneLocation').value;
+                close({ number, title, description: desc, location: loc, actors: currentActorIds });
+            };
+            container.querySelector('#modalCancel').onclick = () => close(null);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+        });
+
+        if (result) {
+            scene.number = result.number;
+            scene.title = result.title;
+            scene.description = result.description;
+            scene.location = result.location;
+            scene.actors = result.actors;
+            saveAll();
+            renderScenes();
+            // если сцена используется в расписании, обновим и его отображение
+            renderCalendar();
+            if (currentSelectedDate) showEvents(currentSelectedDate);
+        }
+    }
+
+    // ---------- Рендеринг разделов (с делегированием) ----------
+    function renderScenes() {
+        const container = document.getElementById('scenesList');
+        if (!container) return;
+        let html = '';
+        scenes.forEach(s => {
+            html += `<div class="card" data-scene-id="${s.id}">
+                <div class="scene-header">
+                    <span class="scene-num">СЦЕНА ${s.number}</span>
+                    <span class="scene-loc">📍 ${escapeHtml(s.location)}</span>
+                    <div>
+                        <button class="editScene">✏️</button>
+                        <button class="deleteScene" style="background:#6a2a1a;">🗑️</button>
+                    </div>
+                </div>
+                <div><strong>${escapeHtml(s.title)}</strong></div>
+                <div style="margin:6px 0;">${escapeHtml(s.description)}</div>
+                <div><strong>Актёры:</strong> ${(s.actors || []).map(aId => {
+                    const actor = actors.find(a => a.id === aId);
+                    return actor ? `<span class="tag">🎭 ${escapeHtml(actor.name)}</span>` : '';
+                }).join('')}</div>
+                <div><strong>Чек-лист:</strong></div>
+                ${(s.checklist || []).map((c, i) => `<div class="checklist-item" data-scene-id="${s.id}" data-idx="${i}"><input type="checkbox" ${c.done ? 'checked' : ''}> ${escapeHtml(c.text)}</div>`).join('')}
+                <button class="addChecklist">+ пункт</button>
+                <div><button class="addShot">🎥 Добавить кадр</button></div>`;
+            s.shots.forEach(sh => {
+                html += `<div class="shot-item" data-shot-id="${sh.id}">
+                    <div class="shot-header">
+                        <strong>Кадр:</strong> ${escapeHtml(sh.desc)}
+                        <button class="deleteShot" style="background:#6a2a1a;">🗑️</button>
+                    </div>
+                    <div class="takes">`;
+                sh.takes.forEach(t => {
+                    html += `<div class="take" data-take-num="${t.num}">
+                        <span>Дубль ${t.num}</span>
+                        <div class="status ${t.done ? 'done' : ''}"></div>
+                    </div>`;
+                });
+                html += `<button class="addTake">+дубль</button></div></div>`;
+            });
+            html += `</div>`;
+        });
+        container.innerHTML = html || '<div class="card">Нет сцен. Нажмите +</div>';
+    }
+
+    function renderExpenses() {
+        const list = document.getElementById('expensesList');
+        const totalDiv = document.getElementById('totalExpenses');
+        if (!list || !totalDiv) return;
+        let total = 0;
+        let html = '';
+        expenses.forEach(e => {
+            total += e.amount;
+            html += `<div class="expense-row" data-expense-id="${e.id}">
+                <div><b>${escapeHtml(e.name)}</b><br>${e.date}</div>
+                <div>${e.amount.toLocaleString()} руб. <button class="delExpense" style="background:#6a2a1a;">✖️</button></div>
+            </div>`;
+        });
+        list.innerHTML = html || '<div class="card">Нет расходов</div>';
+        totalDiv.innerHTML = `💰 Итого: ${total.toLocaleString()} руб.`;
+    }
+
+    function renderActors() {
+        const container = document.getElementById('actorsContainer');
+        if (!container) return;
+        const males = actors.filter(a => a.gender === 'мужской');
+        const females = actors.filter(a => a.gender === 'женский');
+        container.innerHTML = `
+            <div class="actors-column">
+                <h4>Мужчины</h4>
+                ${males.map(a => `<div class="tag" data-actor-id="${a.id}">🎭 ${escapeHtml(a.name)} <button class="delActor" style="background:transparent; border:none; color:#e6c87a;">❌</button></div>`).join('')}
+                ${males.length === 0 ? '<div class="tag">—</div>' : ''}
+            </div>
+            <div class="actors-column">
+                <h4>Женщины</h4>
+                ${females.map(a => `<div class="tag" data-actor-id="${a.id}">🎭 ${escapeHtml(a.name)} <button class="delActor" style="background:transparent; border:none; color:#e6c87a;">❌</button></div>`).join('')}
+                ${females.length === 0 ? '<div class="tag">—</div>' : ''}
+            </div>
+        `;
+    }
+
+    function renderLocations() {
+        const container = document.getElementById('locationsList');
+        if (!container) return;
+        container.innerHTML = locations.map(l => `<span class="tag" data-location="${escapeAttr(l)}">📍 ${escapeHtml(l)} <button class="delLoc" style="background:transparent; border:none; color:#e6c87a;">❌</button></span>`).join('');
+    }
+
+    function renderCalendar() {
+        const monthNames = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        document.getElementById('currentMonthYear').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+        let html = '<div class="calendar">';
+        for (let i = 0; i < firstDay; i++) html += '<div></div>';
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const hasEvent = schedule.some(ev => ev.date === dateStr);
+            const selected = dateStr === currentSelectedDate ? ' selected' : '';
+            html += `<div class="cal-day ${hasEvent ? 'has-event' : ''}${selected}" data-date="${dateStr}">${d}</div>`;
+        }
+        html += '</div>';
+        document.getElementById('calendarContainer').innerHTML = html;
+
+        let total = schedule.reduce((sum, ev) => sum + computeHours(ev.startTime, ev.endTime), 0);
+        document.getElementById('totalHoursStat').innerHTML = `⏱️ Всего отработано: ${total.toFixed(1)} часов`;
+    }
+
+    function showEvents(date) {
+        currentSelectedDate = date;
+        const container = document.getElementById('scheduleEvents');
+        if (!container) return;
+        const events = schedule.filter(ev => ev.date === date);
+        if (!events.length) {
+            container.innerHTML = `<div class="card">Нет съёмок на ${date}</div>`;
+            return;
+        }
+        let html = `<h3>${date}</h3>`;
+        events.forEach(ev => {
+            const scene = findScene(ev.sceneId);
+            const sceneName = scene ? `Сцена ${scene.number} ${scene.title ? `(${escapeHtml(scene.title)})` : ''}` : '—';
+            const hours = computeHours(ev.startTime, ev.endTime).toFixed(1);
+            html += `<div class="card" data-event-id="${ev.id}">
+                ${sceneName}<br>
+                ⏰ ${ev.startTime} — ${ev.endTime} (${hours} ч)<br>
+                📝 ${escapeHtml(ev.notes)}<br>
+                <button class="editScheduleBtn" style="background:#3a6b92;">✏️</button>
+                <button class="delScheduleBtn" style="background:#6a2a1a;">🗑️</button>
+            </div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    // ---------- Обработчики событий через делегирование ----------
+    function setupDelegation() {
+        // Сцены
+        document.getElementById('scenesList').addEventListener('click', async (e) => {
+            const card = e.target.closest('.card');
+            if (!card) return;
+            const sceneId = parseInt(card.dataset.sceneId);
+            if (!sceneId) return;
+
+            if (e.target.closest('.editScene')) {
+                editSceneFull(sceneId);
+            } else if (e.target.closest('.deleteScene')) {
+                if (confirm('Удалить сцену?')) {
+                    scenes = scenes.filter(s => s.id !== sceneId);
+                    saveAll();
+                    renderScenes();
+                    renderCalendar();
+                    if (currentSelectedDate) showEvents(currentSelectedDate);
+                }
+            } else if (e.target.closest('.addShot')) {
+                const scene = findScene(sceneId);
+                if (!scene) return;
+                const shotType = await selectShotType();
+                if (shotType) {
+                    scene.shots.push({ id: Date.now(), desc: shotType, takes: [{ num: 1, done: false }] });
+                    saveAll();
+                    renderScenes();
+                }
+            } else if (e.target.closest('.deleteShot')) {
+                const shotItem = e.target.closest('.shot-item');
+                if (!shotItem) return;
+                const shotId = parseInt(shotItem.dataset.shotId);
+                const scene = findScene(sceneId);
+                if (scene) {
+                    scene.shots = scene.shots.filter(sh => sh.id !== shotId);
+                    saveAll();
+                    renderScenes();
+                }
+            } else if (e.target.closest('.addTake')) {
+                const shotItem = e.target.closest('.shot-item');
+                if (!shotItem) return;
+                const shotId = parseInt(shotItem.dataset.shotId);
+                const shot = findShot(sceneId, shotId);
+                if (shot) {
+                    const nextNum = Math.max(0, ...shot.takes.map(t => t.num)) + 1;
+                    shot.takes.push({ num: nextNum, done: false });
+                    saveAll();
+                    renderScenes();
+                }
+            } else if (e.target.closest('.addChecklist')) {
+                const scene = findScene(sceneId);
+                if (!scene) return;
+                const text = await promptText('Пункт чек-листа', '', '');
+                if (text) {
+                    scene.checklist.push({ text, done: false });
+                    saveAll();
+                    renderScenes();
+                }
+            } else if (e.target.closest('.checklist-item')) {
+                const item = e.target.closest('.checklist-item');
+                const idx = parseInt(item.dataset.idx);
+                const scene = findScene(sceneId);
+                if (scene && scene.checklist[idx] !== undefined) {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    const newState = !scene.checklist[idx].done;
+                    scene.checklist[idx].done = newState;
+                    cb.checked = newState;
+                    saveAll();
+                }
+            } else if (e.target.closest('.status')) {
+                const takeDiv = e.target.closest('.take');
+                if (!takeDiv) return;
+                const takeNum = parseInt(takeDiv.dataset.takeNum);
+                const shotItem = takeDiv.closest('.shot-item');
+                if (!shotItem) return;
+                const shotId = parseInt(shotItem.dataset.shotId);
+                const shot = findShot(sceneId, shotId);
+                if (shot) {
+                    const take = shot.takes.find(t => t.num === takeNum);
+                    if (take) {
+                        take.done = !take.done;
+                        saveAll();
+                        renderScenes();
+                    }
+                }
+            } else if (e.target.closest('.take')) {
+                // клик по дублю (не по статусу) – для переключения тоже
+                const takeDiv = e.target.closest('.take');
+                const statusDiv = takeDiv.querySelector('.status');
+                if (statusDiv) statusDiv.click(); // вызовет обработку выше
+            }
+        });
+
+        // Расходы
+        document.getElementById('expensesList').addEventListener('click', (e) => {
+            const row = e.target.closest('.expense-row');
+            if (!row) return;
+            const id = parseInt(row.dataset.expenseId);
+            if (e.target.closest('.delExpense')) {
+                expenses = expenses.filter(e => e.id !== id);
+                saveAll();
+                renderExpenses();
+            }
+        });
+
+        // Актёры
+        document.getElementById('actorsContainer').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag) return;
+            const id = parseInt(tag.dataset.actorId);
+            if (e.target.closest('.delActor') && id) {
+                actors = actors.filter(a => a.id !== id);
+                scenes.forEach(s => { if (s.actors) s.actors = s.actors.filter(aId => aId !== id); });
+                saveAll();
+                renderActors();
+                renderScenes(); // обновим актёров в сценах
+            }
+        });
+
+        // Локации
+        document.getElementById('locationsList').addEventListener('click', (e) => {
+            const tag = e.target.closest('.tag');
+            if (!tag) return;
+            const loc = tag.dataset.location;
+            if (e.target.closest('.delLoc') && loc) {
+                locations = locations.filter(l => l !== loc);
+                saveAll();
+                renderLocations();
+                // сцены с удалённой локацией останутся, но это допустимо
+            }
+        });
+
+        // Календарь
+        document.getElementById('calendarContainer').addEventListener('click', (e) => {
+            const day = e.target.closest('.cal-day');
+            if (!day) return;
+            const date = day.dataset.date;
+            if (date) {
+                currentSelectedDate = date;
+                renderCalendar();
+                showEvents(date);
+            }
+        });
+
+        // События расписания
+        document.getElementById('scheduleEvents').addEventListener('click', async (e) => {
+            const card = e.target.closest('.card');
+            if (!card) return;
+            const eventId = parseInt(card.dataset.eventId);
+            if (!eventId) return;
+
+            if (e.target.closest('.editScheduleBtn')) {
+                await editScheduleEvent(eventId);
+            } else if (e.target.closest('.delScheduleBtn')) {
+                schedule = schedule.filter(ev => ev.id !== eventId);
+                saveAll();
+                renderCalendar();
+                showEvents(currentSelectedDate);
+            }
+        });
+
+        // Кнопки вне делегирования (добавление и пр.)
+        document.getElementById('addExpenseBtn').onclick = async () => {
+            const name = await promptText('Статья расхода', '');
+            if (!name) return;
+            const amount = await promptNumber('Сумма в рублях', 0);
+            if (amount !== null && !isNaN(amount)) {
+                const date = await promptText('Дата (ГГГГ-ММ-ДД)', new Date().toISOString().slice(0,10));
+                if (date) {
+                    expenses.push({ id: Date.now(), name, amount, date });
+                    saveAll();
+                    renderExpenses();
+                }
+            }
+        };
+
+        document.getElementById('addActorBtn').onclick = async () => {
+            const name = await promptText('Имя актёра', '');
+            if (!name) return;
+            const html = `
+                <h3>Выберите пол</h3>
+                <div class="modal-check-item"><label>Мужской</label><input type="radio" name="gender" value="мужской" checked></div>
+                <div class="modal-check-item"><label>Женский</label><input type="radio" name="gender" value="женский"></div>
+                <div class="modal-buttons"><button id="modalCancel">Отмена</button><button id="modalOk">OK</button></div>
+            `;
+            const gender = await showModal(html, (container) => container.querySelector('input[name="gender"]:checked').value);
+            if (gender) {
+                const newId = actors.length ? Math.max(...actors.map(a=>a.id)) + 1 : 1;
+                actors.push({ id: newId, name, gender });
+                saveAll();
+                renderActors();
+                renderScenes();
+            }
+        };
+
+        document.getElementById('addLocationBtn').onclick = async () => {
+            const name = await promptText('Название локации', '');
+            if (name && !locations.includes(name)) {
+                locations.push(name);
+                saveAll();
+                renderLocations();
+            }
+        };
+
+        document.getElementById('addScheduleEventBtn').onclick = async () => {
+            let defaultDate = currentSelectedDate || new Date().toISOString().slice(0,10);
+            const date = await promptText('Дата (ГГГГ-ММ-ДД)', defaultDate);
+            if (!date) return;
+            const start = await promptTime('Время начала', '09:00');
+            if (!start) return;
+            const end = await promptTime('Время окончания', '18:00');
+            if (!end) return;
+            const sceneId = await selectSceneForSchedule(scenes[0]?.id);
+            if (!sceneId) return;
+            const notes = await promptText('Заметки', '');
+            schedule.push({ id: Date.now(), date, startTime: start, endTime: end, sceneId, notes: notes || '' });
+            saveAll();
+            renderCalendar();
+            showEvents(date);
+        };
+
+        async function editScheduleEvent(eventId) {
+            const ev = schedule.find(e => e.id === eventId);
+            if (!ev) return;
+            const date = await promptText('Дата (ГГГГ-ММ-ДД)', ev.date);
+            if (!date) return;
+            const start = await promptTime('Время начала', ev.startTime);
+            if (!start) return;
+            const end = await promptTime('Время окончания', ev.endTime);
+            if (!end) return;
+            const sceneId = await selectSceneForSchedule(ev.sceneId);
+            if (!sceneId) return;
+            const notes = await promptText('Заметки', ev.notes);
+            ev.date = date; ev.startTime = start; ev.endTime = end; ev.sceneId = sceneId; ev.notes = notes || '';
+            saveAll();
+            renderCalendar();
+            showEvents(date);
+        }
+
+        // Импорт/экспорт
+        document.getElementById('exportReportBtn').onclick = exportReport;
+        document.getElementById('exportJSONBtn').onclick = exportJSON;
+        document.getElementById('importJSONBtn').onclick = importJSON;
+        document.getElementById('clearAllBtn').onclick = clearAll;
+
+        // Смена темы
+        document.getElementById('darkThemeBtn').onclick = () => setTheme('dark');
+        document.getElementById('lightThemeBtn').onclick = () => setTheme('light');
+
+        // FAB
+        document.getElementById('fabAddScene').onclick = () => {
+            const newNum = scenes.length ? Math.max(...scenes.map(s => s.number)) + 1 : 1;
+            scenes.push({ id: Date.now(), number: newNum, title: '', description: '', location: locations[0] || '', actors: [], checklist: [], shots: [] });
+            saveAll();
+            renderScenes();
+        };
+
+        // Навигация по месяцам
+        document.getElementById('prevMonthBtn').onclick = () => changeMonth(-1);
+        document.getElementById('nextMonthBtn').onclick = () => changeMonth(1);
+    }
+
+    function changeMonth(delta) {
+        let newMonth = currentMonth + delta;
+        let newYear = currentYear;
+        if (newMonth < 0) { newMonth = 11; newYear--; }
+        if (newMonth > 11) { newMonth = 0; newYear++; }
+        currentMonth = newMonth; currentYear = newYear;
+        renderCalendar();
+        showEvents(`${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`);
+    }
+
+    // ---------- Импорт / экспорт / очистка ----------
+    async function importJSON() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                // Базовая проверка структуры
+                if (data.scenes && Array.isArray(data.scenes)) scenes = data.scenes;
+                if (data.expenses && Array.isArray(data.expenses)) expenses = data.expenses;
+                if (data.actors && Array.isArray(data.actors)) actors = data.actors;
+                if (data.locations && Array.isArray(data.locations)) locations = data.locations;
+                if (data.schedule && Array.isArray(data.schedule)) schedule = data.schedule;
+                // Пересчитываем currentSelectedDate
+                if (schedule.length) {
+                    const dates = schedule.map(ev => ev.date).sort();
+                    currentSelectedDate = dates[0];
+                    // определим месяц
+                    const [y, m] = currentSelectedDate.split('-');
+                    currentYear = parseInt(y);
+                    currentMonth = parseInt(m) - 1;
+                }
+                saveAll();
+                renderAll();
+                alert('Данные успешно импортированы');
+            } catch (err) {
+                alert('Ошибка: неверный JSON файл');
+            }
+        };
+        input.click();
+    }
+
+    function clearAll() {
+        if (confirm('Сбросить всё? Все сцены, расходы, актёры, локации и расписание будут удалены.')) {
+            scenes = []; expenses = []; actors = []; locations = []; schedule = [];
+            currentSelectedDate = new Date().toISOString().slice(0,10);
+            currentYear = new Date().getFullYear();
+            currentMonth = new Date().getMonth();
+            saveAll();
+            renderAll();
+        }
+    }
+
+    function exportReport() {
+        let report = "===== КИНО-МЕНЕДЖЕР : ОТЧЁТ =====\n\n";
+        report += "СЦЕНЫ:\n";
+        scenes.forEach(s => {
+            report += `[СЦЕНА ${s.number}] ${s.title || '(без названия)'}\n`;
+            report += `  Локация: ${s.location || '—'}\n`;
+            report += `  Актёры: ${(s.actors || []).map(aId => { let a = actors.find(ac => ac.id === aId); return a ? a.name : ''; }).join(', ') || '—'}\n`;
+            report += `  Описание: ${s.description || '—'}\n`;
+            report += `  Чек-лист:\n`;
+            (s.checklist || []).forEach(c => report += `    - ${c.text} [${c.done ? '✓' : ' '}]\n`);
+            report += `  Кадры и дубли:\n`;
+            s.shots.forEach(sh => {
+                report += `    Кадр: ${sh.desc}\n`;
+                sh.takes.forEach(t => report += `      Дубль ${t.num} — ${t.done ? 'Снят' : 'Не снят'}\n`);
+            });
+            report += `\n`;
+        });
+        report += "РАСХОДЫ:\n";
+        let totalExp = 0;
+        expenses.forEach(e => { totalExp += e.amount; report += `  ${e.name} — ${e.amount} руб. (${e.date})\n`; });
+        report += `  ИТОГО: ${totalExp.toLocaleString()} руб.\n\n`;
+        report += "РАСПИСАНИЕ СЪЁМОК:\n";
+        schedule.forEach(ev => {
+            let scene = findScene(ev.sceneId);
+            let sceneName = scene ? `Сцена ${scene.number}` : '—';
+            let hours = computeHours(ev.startTime, ev.endTime).toFixed(1);
+            report += `  ${ev.date} : ${ev.startTime}–${ev.endTime} (${hours} ч) — ${sceneName}\n`;
+            if (ev.notes) report += `    Заметки: ${ev.notes}\n`;
+        });
+        const blob = new Blob([report], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `film_report_${new Date().toISOString().slice(0,19)}.txt`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    function exportJSON() {
+        const data = { scenes, expenses, actors, locations, schedule };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `backup_${Date.now()}.json`;
+        a.click();
+    }
+
+    function renderAll() {
+        renderScenes();
+        renderExpenses();
+        renderActors();
+        renderLocations();
+        renderCalendar();
+        if (currentSelectedDate) showEvents(currentSelectedDate);
+        else {
+            const firstDay = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+            showEvents(firstDay);
+        }
+    }
+
+    // ---------- Инициализация ----------
+    function initTabs() {
+        const tabs = document.querySelectorAll('.tab');
+        const fab = document.getElementById('fabAddScene');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const section = tab.dataset.section;
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(section + 'Section').classList.add('active');
+                fab.style.display = section === 'scenes' ? 'flex' : 'none';
+                if (section === 'schedule') {
+                    renderCalendar();
+                    showEvents(currentSelectedDate || `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`);
+                }
+            });
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadData();
+        initTabs();
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+        setupDelegation();
+        renderAll();
+    });
+})();
+</script>
+</body>
+</html>
